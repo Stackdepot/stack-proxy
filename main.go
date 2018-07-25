@@ -57,7 +57,7 @@ func main() {
 		Get(PING) 
 
 		if err != nil {
-			http.Error(w, err, 501)
+			http.Error(w, err.Error(), 501)
 			return
 		}
 		
