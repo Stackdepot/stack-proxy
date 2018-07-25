@@ -55,6 +55,11 @@ func main() {
 		SetHeader("X-Auth-Token", r.Header.Get("X-Auth-Token")).
 		SetHeader("X-User-Id", r.Header.Get("X-User-Id")).
 		Get(PING) 
+
+		if err != nil {
+			http.Error(w, err, 501)
+			return
+		}
 		
 		var result Response
 		
