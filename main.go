@@ -5,8 +5,11 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"encoding/json"
 
 	log "github.com/Sirupsen/logrus"
+    "gopkg.in/resty.v1"
+	
 )
 
 var (
@@ -27,6 +30,16 @@ func init() {
 	flag.BoolVar(&flInsecureSkipVerify, "i", false, "allow insecure communication")
 }
 
+
+const (
+  PING = "http://auth.stackhub.co/api/ping"
+)
+
+type Response struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
 func main() {
 	log.Info("docker proxy")
 	flag.Parse()
@@ -37,6 +50,24 @@ func main() {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		target := flDockerSocket
+
+		resp, err := resty.R().
+		SetHeader("X-Auth-Token", r.Header.Get("X-Auth-Token")).
+		SetHeader("X-User-Id", r.Header.Get("X-User-Id")).
+		Get(PING) 
+		
+		var result Response
+		
+		err = json.Unmarshal(resp.Body(), &result)
+		if err != nil {
+			http.Error(w, "Internal server error", 501)
+			return
+		}
+		
+		if result.Status == "error" {
+			http.Error(w, result.Message, 401)
+			return 
+		}		
 
 		var c net.Conn
 
